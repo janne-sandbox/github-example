@@ -1,0 +1,45 @@
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.classpath
+*.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+
+# Angular
+.angular/
+
+# Logs
+*.log
+logs/
+
+# Other
+old_files/
+tmp/
+bak/
+
+# Reports
+reports/
+results/
+
+# Testcontainers local Docker client cache (auto-generated, not project code)
+org/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfplan
+terraform/.terraform.lock.hcl

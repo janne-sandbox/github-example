@@ -1,0 +1,48 @@
+1st familirize with folder structure,
+-requirements/functional, is folder where application related requirements go.
+Default filepattern is REQ-001-... .md, for example REQ-001-frontend.md
+But for applications, e.g. ./kiosk-frontend, you should use pattern
+EXAMPLE-REQ-001-... .md
+-requirements/non-functional, are more or less non-application specific
+requirement. Filepatterns there are same, e.g.
+REQ-001-... .md
+UI-REQ-001-supported-browsers.md
+
+./materials folder is folder where I can supply assistive materials temporary
+
+./documentations folder is where we keep in index.html documentation up-to-date, and ALWAYS add needed subpages, not to create one super-page
+Documentation diagrams will be mostly created with Mermaid.
+
+This project will be written with Java (Java Spring Boot), conserning backends
+And with Angular, conserning frontends
+Database types should utf8 ci as
+
+
+Purpose of this project is to create Hello World exampe with front- and backend.
+Backend should update text, e.g. Hello World, clock is <timestamp>
+with 1 second interval from backend, and Angular UI should use websocket to receive
+update.
+Main purpose of project is eventually create examples how github actions can be configured
+and applied.
+
+Folder ./testing will be intended for integration tests, and unit-tests will be in their own corresponding folders e.g. ./kiosk-backend/...
+
+Task list of progress will be kept in ./CONTINUE.md, and progress is always tracked, meaning that file is updated when single task is finished
+When new set of instructions is supplied, you first:
+1) Analyze task and Create requirements to ./requirements
+2) Update folder README.md e.g. /kiosk-backend/README.md
+3) Make implementation
+4) (If adviced, create unit- and/or integration tests)
+5) Update scripts ./start-dev-local.sh, ./stop-dev-local.sh, ./open-tabs.sh and ./run-smoke-tests.sh -- if needed
+6) Test with scripts and verify that everything works
+7) Create or update documentation. Remember to create new chapters to index.html, and link those to new subpages when required
+
+Default prod. deployment environment is Azure, but it can be e.g. AWS, GCP, on-premises etc.
+
+Update these instructions to ./CONTINUE.md
+Do not touch ./CLAUDE.md, GEMINI.md, or DEEPSEEK.md
+In ./CONTINUE.md, always per task refer to specific ./requirement that's conserns task
+
+ 
+
+
