@@ -1,0 +1,72 @@
+name: Deploy application to Azure AKS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ACR_NAME: ${{ vars.ACR_NAME }}
+  AKS_RESOURCE_GROUP: ${{ vars.AKS_RESOURCE_GROUP }}
+  AKS_CLUSTER_NAME: ${{ vars.AKS_CLUSTER_NAME }}
+  FRONTEND_PUBLIC_URL: ${{ vars.FRONTEND_PUBLIC_URL }}
+  BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+  BACKEND_PUBLIC_WS_URL: ${{ vars.BACKEND_PUBLIC_WS_URL }}
+
+jobs:
+  deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to Azure Container Registry
+        run: az acr login --name "$ACR_NAME"
+      - name: Resolve registry
+        id: registry
+        run: echo "server=$(az acr show --name "$ACR_NAME" --query loginServer --output tsv)" >> "$GITHUB_OUTPUT"
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: example-backend/Dockerfile
+          push: true
+          tags: ${{ steps.registry.outputs.server }}/github-example-backend:${{ github.sha }}
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: example-frontend
+          file: example-frontend/Dockerfile
+          push: true
+          tags: ${{ steps.registry.outputs.server }}/github-example-frontend:${{ github.sha }}
+      - uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+      - uses: azure/setup-helm@v4
+      - name: Deploy backend
+        run: |
+          helm upgrade --install example-backend helm-charts/example-backend \
+            --namespace github-example --create-namespace \
+            --set image.repository=${{ steps.registry.outputs.server }}/github-example-backend \
+            --set image.tag=${{ github.sha }} \
+            --set-string frontendOrigin="$FRONTEND_PUBLIC_URL" \
+            --wait
+      - name: Deploy frontend
+        run: |
+          helm upgrade --install example-frontend helm-charts/example-frontend \
+            --namespace github-example --create-namespace \
+            --set image.repository=${{ steps.registry.outputs.server }}/github-example-frontend \
+            --set image.tag=${{ github.sha }} \
+            --set-string backend.restBaseUrl="$BACKEND_PUBLIC_URL" \
+            --set-string backend.webSocketBaseUrl="$BACKEND_PUBLIC_WS_URL" \
+            --wait
+      - name: Show rollout status
+        run: kubectl get deployments,pods,services --namespace github-example

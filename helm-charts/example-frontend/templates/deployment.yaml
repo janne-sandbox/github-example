@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "example-frontend.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "example-frontend.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "example-frontend.labels" . | nindent 8 }}
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 101, fsGroup: 101 }
+      containers:
+        - name: example-frontend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - { name: BACKEND_REST_BASE_URL, value: {{ .Values.backend.restBaseUrl | quote }} }
+            - { name: BACKEND_WEBSOCKET_BASE_URL, value: {{ .Values.backend.webSocketBaseUrl | quote }} }
+            - { name: RECONNECT_DELAY_MS, value: {{ .Values.backend.reconnectDelayMs | quote }} }
+          livenessProbe:
+            httpGet: { path: /, port: 8080 }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /, port: 8080 }
+            initialDelaySeconds: 5
+          resources: {{- toYaml .Values.resources | nindent 12 }}

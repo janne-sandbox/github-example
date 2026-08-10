@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions examples</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="nav-loader.js" defer></script>
+</head>
+<body>
+<aside class="sidebar" data-generated-nav="true"></aside>
+<main class="main-content">
+    <header class="header"><h2>GitHub Actions examples</h2></header>
+    <div class="content">
+        <section class="content-section">
+            <h3>Workflow map</h3>
+            <table>
+                <thead><tr><th>Workflow</th><th>Trigger</th><th>Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ci.yml</code></td><td>Push and pull request</td><td>Backend tests, frontend audit/tests/build, and artifacts</td></tr>
+                    <tr><td><code>docker-multiarch.yml</code></td><td>Main and manual</td><td>Publish amd64/arm64 backend and frontend images to GHCR</td></tr>
+                    <tr><td><code>pages.yaml</code></td><td>Documentation changes on main</td><td>Publish static documentation to GitHub Pages</td></tr>
+                    <tr><td><code>azure-static-web-apps-*.yml</code></td><td>Main and manual</td><td>Alternative Azure Static Web Apps documentation deployment</td></tr>
+                    <tr><td><code>deploy-azure.yml</code></td><td>Manual</td><td>Build images in ACR and deploy Helm releases to AKS</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="content-section">
+            <h3>CI quality gates</h3>
+            <ul>
+                <li>Maven compiles and runs backend tests on Java 21.</li>
+                <li><code>npm ci</code> uses the committed lockfile on Node.js 26.</li>
+                <li><code>npm audit --audit-level=critical</code> rejects critical advisories.</li>
+                <li>Vitest runs Angular unit tests and Angular creates a production bundle.</li>
+                <li>Backend JAR and frontend browser bundle are uploaded as build artifacts.</li>
+            </ul>
+        </section>
+
+        <section class="content-section">
+            <h3>Azure deployment inputs</h3>
+            <p><code>terraform/</code> provisions the resource group, ACR, AKS, monitoring, application-routing add-on, and environment-scoped GitHub OIDC identity. Its <code>github_actions_variables</code> output supplies the six Azure resource and identity values below without creating a client secret.</p>
+            <p>The manual AKS workflow uses GitHub environment variables rather than committed credentials:</p>
+            <div class="code-block">AZURE_CLIENT_ID
+AZURE_TENANT_ID
+AZURE_SUBSCRIPTION_ID
+ACR_NAME
+AKS_RESOURCE_GROUP
+AKS_CLUSTER_NAME
+FRONTEND_PUBLIC_URL
+BACKEND_PUBLIC_URL
+BACKEND_PUBLIC_WS_URL</div>
+            <div class="warning-box"><strong>Verification boundary:</strong> workflow syntax and local artifacts can be checked without Azure access. A real deployment, image manifests, TLS, DNS, and AKS rollout require configured GitHub variables, federated identity, an ACR, and an AKS cluster.</div>
+        </section>
+
+        <section class="content-section">
+            <h3>Terraform workflow</h3>
+            <div class="code-block">cd terraform
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform validate
+terraform test
+terraform plan -out=github-example.tfplan
+terraform apply github-example.tfplan</div>
+            <p>Review the saved plan before applying because AKS, ACR, load-balancing, and monitoring resources incur Azure charges. Use the documented Azure Storage backend for shared state; never commit local state. Provisioning must run under an existing Azure identity allowed to create role assignments. After the first apply, copy the <code>github_actions_variables</code> output to the GitHub <code>production</code> environment and configure the three HTTPS/WSS public URLs.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Security boundaries</h3>
+            <p>Workflows use GitHub OIDC for Azure login and never embed cloud credentials. Production frontend URLs must use HTTPS/WSS, and the backend CORS origin must match the deployed frontend exactly.</p>
+        </section>
+    </div>
+</main>
+</body>
+</html>

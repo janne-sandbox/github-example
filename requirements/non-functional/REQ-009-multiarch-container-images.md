@@ -10,7 +10,7 @@ Container / Build
 High
 
 ## Statement
-All Docker container images produced by the Clinical Cache platform **MUST** be
+All Docker container images produced by the Hello World example **MUST** be
 built and published for both `linux/amd64` and `linux/arm64` architectures.
 
 ## Rationale
@@ -22,14 +22,9 @@ built and published for both `linux/amd64` and `linux/arm64` architectures.
   supported platform without per-platform tags.
 
 ## Scope
-All service images:
-- `cache-backend`
-- `vna-backend`
-- `fhir-backend`
-- `registry-backend`
-- `hl7-receiver-backend`
-- `atna-fhir-backend`
-- `atna-fhir-frontend` (nginx-based)
+All application images:
+- `example-backend`
+- `example-frontend`
 
 ## Implementation
 
@@ -42,7 +37,7 @@ ARG BUILDPLATFORM=linux/amd64
 ARG TARGETPLATFORM
 
 # Build stage runs on the host platform (faster cross-compilation)
-FROM --platform=${BUILDPLATFORM} eclipse-temurin:17-jdk-alpine AS build
+FROM --platform=${BUILDPLATFORM} eclipse-temurin:21-jdk-alpine AS build
 ...
 
 # Runtime stage resolves to the target platform

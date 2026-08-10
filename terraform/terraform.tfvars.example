@@ -1,0 +1,14 @@
+subscription_id  = "00000000-0000-0000-0000-000000000000"
+tenant_id        = "00000000-0000-0000-0000-000000000000"
+github_repository = "your-organization/github-example"
+
+github_environment = "production"
+location           = "North Europe"
+
+# Optional globally unique override. When omitted, Terraform adds a stable suffix.
+# acr_name = "youruniquecontainerregistry"
+
+tags = {
+  owner       = "platform-team"
+  cost-center = "example"
+}

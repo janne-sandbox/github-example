@@ -1,96 +1,55 @@
-name: Build & Push Multi-Arch Docker Images
+name: Publish multi-architecture images
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - '*/src/**'
-      - '*/Dockerfile'
-      - 'Dockerfile'
       - 'pom.xml'
-      - '*/pom.xml'
+      - 'example-backend/**'
+      - 'example-frontend/**'
+      - '.github/workflows/docker-multiarch.yml'
   workflow_dispatch:
-    inputs:
-      services:
-        description: 'Comma-separated list of services to build (or "all")'
-        required: false
-        default: 'all'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}/clinical-cache
 
 jobs:
-  build-and-push:
-    name: ${{ matrix.service }}
+  publish:
+    name: ${{ matrix.name }} image
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     strategy:
       fail-fast: false
       matrix:
         include:
-          - service: cache-backend
-            dockerfile: Dockerfile
+          - name: backend
             context: .
-          - service: pacs-backend
-            dockerfile: pacs-backend/Dockerfile
-            context: .
-          - service: fhir-backend
-            dockerfile: fhir-backend/Dockerfile
-            context: .
-          - service: registry-backend
-            dockerfile: registry-backend/Dockerfile
-            context: .
-          - service: hl7-receiver-backend
-            dockerfile: hl7-receiver-backend/Dockerfile
-            context: .
-          - service: atna-fhir-backend
-            dockerfile: atna-fhir-backend/Dockerfile
-            context: atna-fhir-backend
-          - service: atna-fhir-frontend
-            dockerfile: atna-fhir-frontend/Dockerfile
-            context: atna-fhir-frontend
-
+            dockerfile: example-backend/Dockerfile
+          - name: frontend
+            context: example-frontend
+            dockerfile: example-frontend/Dockerfile
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Enable QEMU for cross-architecture emulation (needed for arm64 on amd64 runners)
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
         with:
           platforms: linux/amd64,linux/arm64
-
-      # Enable BuildKit multi-platform builder
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
+      - uses: docker/metadata-action@v5
         id: meta
-        uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/github-example-${{ matrix.name }}
           tags: |
             type=ref,event=branch
-            type=sha,prefix={{branch}}-
+            type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push ${{ matrix.service }}
-        uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
@@ -98,14 +57,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Pass build platform so build stage runs natively (faster)
-          build-args: |
-            BUILDPLATFORM=linux/amd64
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
-
-      - name: Verify multi-arch manifest
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+      - name: Inspect published manifest
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          docker buildx imagetools inspect \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest \
-            | grep -E 'Platform|Digest'
+          IMAGE_REF="$(printf '%s\n' "$IMAGE_TAGS" | head -n 1)"
+          docker buildx imagetools inspect "$IMAGE_REF"

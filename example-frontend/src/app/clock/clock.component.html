@@ -1,0 +1,19 @@
+<main class="page-shell">
+  <section class="clock-card" aria-labelledby="clock-title">
+    <p class="eyebrow">Spring Boot + Angular WebSocket example</p>
+    <h1 id="clock-title">Hello World</h1>
+    <p class="clock" data-testid="clock-value" aria-live="polite">{{ formattedTime() }}</p>
+    <p class="message" data-testid="clock-message">
+      {{ clock.payload()?.text ?? 'Loading the current clock…' }}
+    </p>
+
+    <div class="connection" aria-live="polite">
+      <span class="status-dot" [class.connected]="clock.connectionState() === 'connected'"></span>
+      <span data-testid="connection-state">{{ clock.connectionState() }}</span>
+    </div>
+
+    @if (clock.error(); as error) {
+      <p class="error" role="alert" data-testid="clock-error">{{ error }}</p>
+    }
+  </section>
+</main>

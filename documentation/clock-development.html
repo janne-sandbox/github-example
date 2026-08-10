@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock local development</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="nav-loader.js" defer></script>
+</head>
+<body>
+<aside class="sidebar" data-generated-nav="true"></aside>
+<main class="main-content">
+    <header class="header"><h2>Clock local development</h2></header>
+    <div class="content">
+        <section class="content-section">
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>Java 21 or newer and Maven 3.9 or newer</li>
+                <li>Node.js 26 and npm 11</li>
+                <li><code>curl</code> and <code>lsof</code> for local scripts</li>
+            </ul>
+        </section>
+
+        <section class="content-section">
+            <h3>Run the complete example</h3>
+            <div class="code-block">cd example-frontend
+npm ci
+cd ..
+./start-dev-local.sh
+./run-smoke-tests.sh
+./stop-dev-local.sh</div>
+            <p>Logs are written to <code>logs/</code>. Project-owned PIDs are kept under <code>.run/</code> and removed during a normal stop.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Test applications independently</h3>
+            <div class="code-block">mvn test
+
+cd example-frontend
+npm test
+npm run build
+npm audit --audit-level=critical</div>
+            <p>The smoke script validates health, REST JSON, frontend HTML, two real WebSocket messages, and the 750–1,500 millisecond cadence tolerance.</p>
+            <div class="warning-box"><strong>Demonstration constraint:</strong> this cadence verifies WebSocket server-push behavior; it is not a recommended production clock design. Real clocks should tick locally in JavaScript/TypeScript and synchronize with Java services only when needed.</div>
+        </section>
+
+        <section class="content-section">
+            <h3>Configuration</h3>
+            <table>
+                <thead><tr><th>Variable</th><th>Default</th><th>Use</th></tr></thead>
+                <tbody>
+                    <tr><td><code>BACKEND_PORT</code></td><td><code>8080</code></td><td>Local backend and smoke target</td></tr>
+                    <tr><td><code>FRONTEND_PORT</code></td><td><code>4200</code></td><td>Angular development server</td></tr>
+                    <tr><td><code>FRONTEND_ORIGIN</code></td><td><code>http://localhost:4200</code></td><td>Backend CORS/WebSocket origin</td></tr>
+                    <tr><td><code>OPEN_BROWSER=false</code></td><td><code>true</code></td><td>Print URLs instead of launching a browser</td></tr>
+                </tbody>
+            </table>
+            <p>For deployed frontends, replace <code>config.js</code> with the public HTTPS and WSS backend URLs before Angular starts.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Troubleshooting</h3>
+            <ul>
+                <li>An occupied port is reported before either application starts.</li>
+                <li>A readiness timeout points to the corresponding file under <code>logs/</code>.</li>
+                <li>If a PID file is stale, run <code>./stop-dev-local.sh</code> before restarting.</li>
+                <li>Production builds may need normal process permissions when a restricted sandbox terminates native build workers.</li>
+            </ul>
+        </section>
+    </div>
+</main>
+</body>
+</html>

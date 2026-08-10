@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock architecture and behavior</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="nav-loader.js" defer></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, securityLevel: 'strict' });
+    </script>
+</head>
+<body>
+<aside class="sidebar" data-generated-nav="true"></aside>
+<main class="main-content">
+    <header class="header"><h2>Clock architecture and behavior</h2></header>
+    <div class="content">
+        <section class="content-section">
+            <h3>Purpose</h3>
+            <p>The example demonstrates a requirements-driven Spring Boot and Angular application. REST supplies the initial value, while a native WebSocket supplies live updates without polling.</p>
+            <div class="info-box"><strong>Requirement:</strong> <code>EXAMPLE-REQ-001</code>. Backend defaults to port <code>8080</code>; frontend defaults to <code>4200</code>.</div>
+        </section>
+
+        <section class="content-section">
+            <h3>Design caveat: do not build a real clock this way</h3>
+            <div class="warning-box"><strong>The one-second WebSocket interval is intentionally inefficient.</strong> It creates continuous server scheduling, serialization, network traffic, and client processing for a value the browser can calculate locally.</div>
+            <p>A production webpage should normally use JavaScript/TypeScript timers and the browser clock to update <code>HH:mm:ss</code>. If server-authoritative time matters, Java can provide an initial timestamp or occasional synchronization point; the page can calculate the elapsed time between synchronizations instead of receiving a message every second.</p>
+            <p>This project deliberately keeps the inefficient one-second stream because it is a WebSocket demonstration. The frequent updates make connection establishment, server push, payload handling, disconnect detection, and automatic reconnection immediately visible.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Components</h3>
+            <pre class="mermaid">
+flowchart LR
+    Browser[Angular ClockComponent] -->|GET /api/v1/clock| REST[ClockRestController]
+    Browser <-->|WebSocket /ws/clock| WS[ClockWebSocketHandler]
+    REST --> Service[ClockService]
+    WS --> Service
+    Scheduler[Spring scheduler every 1 second] --> WS
+            </pre>
+            <table>
+                <thead><tr><th>Component</th><th>Responsibility</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ClockService</code></td><td>Creates the timestamp and greeting payload.</td></tr>
+                    <tr><td><code>ClockRestController</code></td><td>Returns the initial JSON payload.</td></tr>
+                    <tr><td><code>ClockWebSocketHandler</code></td><td>Sends an immediate value, broadcasts updates, and isolates failed sessions.</td></tr>
+                    <tr><td><code>ClockComponent</code></td><td>Renders local <code>HH:mm:ss</code>, connection state, and errors.</td></tr>
+                    <tr><td><code>ClockService</code> (Angular)</td><td>Loads REST state, parses WebSocket messages, and controls reconnect/cleanup.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="content-section">
+            <h3>Message and reconnect flow</h3>
+            <pre class="mermaid">
+sequenceDiagram
+    participant UI as Angular UI
+    participant API as Spring REST API
+    participant WS as Spring WebSocket
+    UI->>API: GET /api/v1/clock
+    API-->>UI: ClockPayload
+    UI->>WS: Connect /ws/clock
+    WS-->>UI: Immediate ClockPayload
+    loop Every second
+        WS-->>UI: ClockPayload
+    end
+    WS--xUI: Connection closes
+    UI->>UI: Show reconnecting/error state
+    UI->>WS: Retry after bounded delay
+    WS-->>UI: Connected and live updates resume
+            </pre>
+            <p>A malformed update never replaces the last valid value. Destroying the Angular component closes its socket and cancels pending retries.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Payload</h3>
+            <div class="code-block">{
+  "text": "Hello World, clock is 2026-08-10T12:34:56Z",
+  "timestamp": "2026-08-10T12:34:56Z"
+}</div>
+        </section>
+    </div>
+</main>
+</body>
+</html>

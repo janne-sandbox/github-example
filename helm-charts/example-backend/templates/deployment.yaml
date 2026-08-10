@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "???.fullname" . }}
+  name: {{ include "example-backend.fullname" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
-    matchLabels: {{- include "???.labels" . | nindent 6 }}
+    matchLabels: {{- include "example-backend.labels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{- include "???.labels" . | nindent 8 }}
+      labels: {{- include "example-backend.labels" . | nindent 8 }}
       {{- if .Values.vault.enabled }}
       annotations:
         vault.hashicorp.com/agent-inject: "true"
@@ -18,16 +18,16 @@ spec:
     spec:
       securityContext: { runAsNonRoot: true, runAsUser: 1000, fsGroup: 1000 }
       containers:
-        - name: ???-backend
+        - name: example-backend
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports: [{ name: http, containerPort: 8085 }]
+          ports: [{ name: http, containerPort: 8080 }]
           env:
-            - { name: SWAGGER_ENABLED, value: "false" }
+            - { name: FRONTEND_ORIGIN, value: {{ .Values.frontendOrigin | quote }} }
           livenessProbe:
-            httpGet: { path: {{ .Values.probes.liveness.path }}, port: 8085 }
+            httpGet: { path: {{ .Values.probes.liveness.path }}, port: 8080 }
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
           readinessProbe:
-            httpGet: { path: {{ .Values.probes.readiness.path }}, port: 8085 }
+            httpGet: { path: {{ .Values.probes.readiness.path }}, port: 8080 }
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
           resources: {{- toYaml .Values.resources | nindent 12 }}
