@@ -1,0 +1,70 @@
+name: Offline DeepSeek Code Review
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      notification_email:
+        description: Optional fallback email recipient for this run
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: code-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review Java and TypeScript
+    runs-on: [self-hosted, code-review, ollama]
+    timeout-minutes: 45
+    env:
+      DEEPSEEK_OLLAMA_MODEL: ${{ vars.DEEPSEEK_OLLAMA_MODEL || 'deepseek-coder:6.7b' }}
+      CODE_REVIEW_EMAIL_TO: ${{ github.event_name == 'workflow_dispatch' && inputs.notification_email || vars.CODE_REVIEW_EMAIL_TO }}
+      SMTP_ALLOWED_RECIPIENT_DOMAINS: ${{ vars.CODE_REVIEW_EMAIL_DOMAINS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+
+      - name: Test review and notification code
+        working-directory: code-review
+        run: npm test
+
+      - name: Run mandatory offline DeepSeek review
+        env:
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: '465'
+          SMTP_SECURE: 'true'
+          SMTP_STARTTLS: 'false'
+          SMTP_FROM: github-code-review@gmail.com
+          SMTP_USERNAME: github-code-review@gmail.com
+          SMTP_AUTH_MODE: oauth2
+          SMTP_OAUTH_CLIENT_ID: ${{ secrets.SMTP_APPID }}
+          SMTP_OAUTH_CLIENT_SECRET: ${{ secrets.SMTP_SECRET }}
+          SMTP_OAUTH_REFRESH_TOKEN: ${{ secrets.SMTP_REFRESH_TOKEN }}
+        run: >-
+          node code-review/run-review.js
+          --languages=java,typescript
+          --deepseek=true
+          --internet=false
+          --require-deepseek=true
+          --requirements-dir=requirements
+          --output-dir=code-review/results
+
+      - name: Upload code review reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-deepseek-code-review-${{ github.run_id }}
+          path: code-review/results/*.md
+          if-no-files-found: warn
+          retention-days: 14

@@ -212,15 +212,123 @@ on-premises deployments may also be documented.
     Chrome rendered the Terraform workflow documentation. No Azure plan, apply,
     or hosted deployment was attempted without cloud credentials.
 
+### 8. Automated offline code review
+
+- [x] **8.1 ✅ Define the DeepSeek review and SMTP notification behavior.**
+  - Requirement: `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md`
+  - Scope: run the supplied offline DeepSeek reviewer from GitHub Actions,
+    optionally email its result through authenticated SMTP, prefer the push
+    author's repository-visible email when usable, and support an explicitly
+    selected fallback recipient.
+- [x] **8.2 ✅ Integrate `code-review` with the GitHub Actions workflow.**
+  - Requirement: `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md`
+  - Evidence: `.github/workflows/code-review.yaml` targets a trusted runner with
+    the cumulative `self-hosted`, `code-review`, and `ollama` labels, runs Node
+    tests, requires local DeepSeek for Java and TypeScript, and always uploads
+    Markdown artifacts. Ruby parsed the YAML and verified its triggers, runner
+    labels, job, and artifact step on 2026-08-24.
+- [x] **8.3 ✅ Implement secure SMTP result delivery and recipient resolution.**
+  - Requirement: `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md`
+  - Evidence: the Node notifier validates recipients, rejects line breaks and
+    GitHub `noreply` addresses, supports an allowed-domain list, prefers push
+    author metadata with a manual/configured fallback, and uses authenticated
+    implicit TLS or STARTTLS. SMTP credentials are scoped to the review step.
+- [ ] **8.4 🔧 Test and document local and hosted configuration.**
+  - Requirement: `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md`
+  - Local evidence: `npm test --prefix code-review` passed 14 tests with 0
+    failures and explicitly skipped the supplied sample-app suite because its
+    `sample-apps/` fixtures were not supplied. Node syntax checks and
+    `git diff --check` passed. A deterministic Java/TypeScript run generated
+    three reports and skipped unconfigured SMTP cleanly.
+  - Offline evidence: after temporarily starting local Ollama 0.31.1, the real
+    required-provider run used installed `deepseek-coder:6.7b` for both Java and
+    TypeScript and produced reports whose metadata says `Enabled (offline
+    Ollama: deepseek-coder:6.7b)`. The aggregate advisory verdict was `DENIED`
+    because DeepSeek incorrectly claimed that a no-argument GET controller needs
+    `@RequestBody`; model verdicts are therefore documented as non-gating by
+    default. The temporary Ollama service was stopped afterward.
+  - Documentation evidence: root and reviewer READMEs, the GitHub Actions page,
+    documentation navigation, landing page, and new `code-review.html` describe
+    the runner, model, SMTP variables/secrets, recipient order, and verification
+    boundary. Static file/link checks passed. After task 8.7, headless Chrome also
+    rendered the updated page, navigation, Mermaid flow, email-content table,
+    context warning, and OAuth configuration without visible overlap or clipping.
+  - Remaining hosted verification: configure an online trusted self-hosted
+    runner with both custom labels and the installed model, configure the Gmail
+    OAuth refresh-token secret and a deliverable recipient, push or dispatch the
+    workflow, confirm the uploaded artifact and received email, and inspect
+    secret masking.
+- [x] **8.5 ✅ Configure Gmail SMTP for automated review delivery.**
+  - Requirement: `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md`
+  - Scope: use Gmail SMTP with sender/authentication identity
+    `github-code-review@gmail.com`; keep its app password only in a GitHub Actions
+    secret; update workflow, tests, and documentation; leave real delivery
+    verification pending until the secret and Gmail account are configured.
+  - Evidence: the workflow fixes `smtp.gmail.com:465`, implicit TLS, sender, and
+    authentication identity, and reads only the password from
+    `secrets.CODE_REVIEW_GMAIL_APP_PASSWORD`. Google-specific workflow tests and
+    parsed-YAML assertions passed on 2026-08-24. The complete Node suite passed
+    15 tests with 0 failures and 1 explicit missing-fixture skip; `git diff
+    --check` passed. Requirements and documentation specify 2-Step Verification
+    and a dedicated app password. No Gmail authentication or delivery was
+    attempted without the secret.
+  - Superseded authentication: task 8.6 replaces the app-password contract with
+    Google OAuth 2.0 at the user's request; the Gmail host, port, sender, and TLS
+    configuration remain applicable.
+- [x] **8.6 ✅ Replace Gmail app-password authentication with OAuth 2.0.**
+  - Requirement: `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md`
+  - Scope: consume existing GitHub secrets `SMTP_APPID` and `SMTP_SECRET` as the
+    Google OAuth client ID and client secret, obtain short-lived access tokens,
+    and authenticate to Gmail SMTP with SASL XOAUTH2.
+  - Required additional credential: an unattended workflow cannot authorize a
+    Gmail user with client credentials alone. Add the consent-derived offline
+    refresh token as GitHub secret `SMTP_REFRESH_TOKEN`; do not misconfigure the
+    OAuth client ID and secret as an SMTP username/password pair.
+  - Evidence: the workflow consumes `secrets.SMTP_APPID`,
+    `secrets.SMTP_SECRET`, and `secrets.SMTP_REFRESH_TOKEN`; the notifier exchanges
+    them at Google's HTTPS token endpoint and uses the resulting short-lived
+    access token with Gmail SASL XOAUTH2. Focused tests validate the token request,
+    XOAUTH2 payload, required refresh token, and exact YAML secret names. The
+    complete Node suite passed 18 tests with 0 failures and 1 explicit
+    missing-fixture skip on 2026-08-24. Live token exchange and Gmail delivery
+    remain unverified because `SMTP_REFRESH_TOKEN` has not been provided in the
+    current context.
+- [x] **8.7 ✅ Document the exact review-email payload and change context.**
+  - Requirement: `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md`
+  - Scope: update `documentation/` with the current subject/body fields, report
+    size cap, push/manual trigger boundary, absence of PR/MR and commit context,
+    OAuth prerequisites, and the distinction between static checks, browser
+    rendering, and real Gmail delivery.
+  - Evidence: `code-review.html` now contains an exact payload table, the
+    200,000-character combined-report cap, a prominent list of omitted change
+    identifiers, and the push/manual-only trigger boundary; `github-actions.html`
+    summarizes the same limitation. Static HTML target checks, generated-nav
+    route checks, and `git diff --check` passed on 2026-08-24. Headless Chrome
+    rendered `code-review.html` at 1440x2200; visual inspection confirmed the
+    sidebar, Mermaid diagram, payload table, warning, and OAuth sections render
+    correctly. This is browser evidence only, not real Gmail delivery evidence.
+
 ## Requirements reference
 
 - `requirements/functional/EXAMPLE-REQ-001-hello-world.md` — core real-time
   clock behavior and delivery acceptance criteria.
 - `requirements/non-functional/REQ-009-multiarch-container-images.md` — amd64
   and arm64 publication requirements for both application images.
+- `requirements/functional/EXAMPLE-REQ-002-automated-code-review.md` — offline
+  DeepSeek review workflow and optional SMTP result notification.
 
 ## Current handoff
 
+- Session instruction received 2026-08-24: record each new request in this
+  tracker before beginning work.
+- Intake status: **🔧 Task 8.7 documentation update complete;
+  `SMTP_REFRESH_TOKEN`, hosted runner, and Gmail delivery verification remain
+  under task 8.4**.
+- Intake next action: configure and run the trusted GitHub self-hosted runner and
+  SMTP integration described in task 8.4, then record the artifact and delivery
+  evidence here.
+- Active task: **8.4 — Verify the configured review and email path on GitHub and
+  the selected SMTP server**.
 - Active task: **7.3 — Verify the configured deployment pipelines on their hosted
   GitHub and Azure targets**.
 - Last verified: Maven 3/3, Angular 5/5, production frontend build, npm audit with

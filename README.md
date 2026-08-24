@@ -40,3 +40,12 @@ managed application routing, explicit AKS identities, and the environment-scoped
 GitHub OIDC deployment identity. See `terraform/README.md` for cost warnings,
 state configuration, validation, apply, GitHub variable, and post-deployment
 verification instructions.
+
+## Offline code review
+
+`.github/workflows/code-review.yaml` runs the Java and TypeScript reviewers with
+an Ollama-hosted DeepSeek model on a trusted self-hosted runner. It uploads the
+Markdown reports and can deliver them through Gmail SMTP as
+`github-code-review@gmail.com` to the push author or a configured fallback
+recipient. See `code-review/README.md` for runner labels, the required OAuth
+secrets, local commands, variables, and recipient-resolution behavior.

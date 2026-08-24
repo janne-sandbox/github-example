@@ -8,7 +8,8 @@
             ['index.html', 'Documentation home'],
             ['clock-overview.html', 'Architecture and behavior'],
             ['clock-development.html', 'Local development'],
-            ['github-actions.html', 'GitHub Actions']
+            ['github-actions.html', 'GitHub Actions'],
+            ['code-review.html', 'Offline code review']
         ]]
     ];
 

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline code review</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="nav-loader.js" defer></script>
+</head>
+<body>
+<aside class="sidebar" data-generated-nav="true"></aside>
+<main class="main-content">
+    <header class="header"><h2>Offline DeepSeek code review</h2></header>
+    <div class="content">
+        <section class="content-section">
+            <h3>Execution model</h3>
+            <p>The <code>code-review.yaml</code> workflow reviews Java and TypeScript on pushes to <code>main</code> and on manual dispatch. It targets a trusted self-hosted runner labelled <code>code-review</code> and <code>ollama</code>. Ollama must listen only on the runner at <code>127.0.0.1:11434</code>, with <code>deepseek-coder:6.7b</code> installed unless <code>DEEPSEEK_OLLAMA_MODEL</code> selects another local model.</p>
+            <div class="warning-box"><strong>Verification boundary:</strong> GitHub-hosted runners cannot reach a developer workstation's loopback Ollama service. The workflow requires the offline model and fails if Ollama, the model, or a semantic response is unavailable or invalid.</div>
+            <p>Model verdicts are advisory and remain visible in the artifact and email. They do not fail the workflow by default because semantic findings require human validation. Local users may add <code>--fail-on=denied</code> when they intentionally accept model verdicts as a gate.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Review flow</h3>
+            <div class="mermaid">
+flowchart LR
+    P[Trusted push or manual dispatch] --> R[Self-hosted runner]
+    R --> T[Node unit tests]
+    T --> J[Java reviewer]
+    T --> Y[TypeScript reviewer]
+    J --> O[Local Ollama DeepSeek]
+    Y --> O
+    O --> A[Markdown artifact]
+    A --> M{Recipient and OAuth credentials available?}
+    M -->|No recipient| D[Workflow result without email]
+    M -->|Yes| E[Resolve recipient and send with TLS plus XOAUTH2]
+    E --> D
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h3>Recipient selection</h3>
+            <p>For a push, the notifier checks the push payload email, head-commit author, checked-out commit author, and configured fallback in that order. A manual dispatch uses its selected fallback first. Invalid values, line breaks, GitHub <code>noreply</code> addresses, and addresses outside the optional domain allowlist are rejected.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Email contents and change context</h3>
+            <table>
+                <thead><tr><th>Part</th><th>Current content</th></tr></thead>
+                <tbody>
+                    <tr><td>Subject</td><td><code>[owner/repository] code review: VERDICT</code></td></tr>
+                    <tr><td>Summary</td><td>UTC timestamp, aggregate verdict, offline model name, and each reviewed language's verdict and report filename</td></tr>
+                    <tr><td>Details</td><td>Complete generated Java and TypeScript Markdown reports, separated by dividers</td></tr>
+                    <tr><td>Delivery metadata</td><td>The source used to resolve the recipient, such as push payload, checked-out commit, or configured fallback</td></tr>
+                    <tr><td>Size boundary</td><td>Combined report content is truncated after 200,000 characters before delivery</td></tr>
+                </tbody>
+            </table>
+            <div class="warning-box"><strong>Current context limitation:</strong> the email does not include a PR/MR number, commit SHA, branch, pusher name, commit message, changed-file list, or GitHub Actions run URL. The review workflow runs on pushes to <code>main</code> and manual dispatches only; it does not currently run for pull-request events. GitHub uses the term pull request rather than merge request.</div>
+            <p>The Markdown artifact and email identify what the reviewers concluded, but recipients must currently use the repository and timestamp to correlate a message with a specific push. Adding immutable commit and workflow links is future work, not existing behavior.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Configuration</h3>
+            <p>The workflow connects to <code>smtp.gmail.com:465</code> with implicit TLS and authenticates as <code>github-code-review@gmail.com</code> using SASL XOAUTH2. Store the registered Google OAuth client ID and secret as <code>SMTP_APPID</code> and <code>SMTP_SECRET</code>.</p>
+            <p>Client credentials alone cannot authorize the Gmail mailbox. Authorize the Gmail user once with offline access and the <code>https://mail.google.com/</code> scope, then store the consent-derived refresh token as <code>SMTP_REFRESH_TOKEN</code>. The notifier exchanges it for a short-lived access token at runtime. Never use or store the normal Google Account password.</p>
+            <p>The fallback address, allowed recipient domains, and local model remain repository variables. All three OAuth secrets are required for hosted Gmail delivery.</p>
+            <div class="code-block">cd code-review
+npm test
+cd ..
+node code-review/run-review.js --languages=java,typescript --deepseek=true --internet=false --require-deepseek=true</div>
+            <p>Real Gmail delivery requires the client ID, client secret, refresh token, and a deliverable recipient. Local token-exchange and message-construction tests do not prove external delivery. Static HTML/link validation does not prove browser rendering; both evidence levels must be recorded separately.</p>
+        </section>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, securityLevel: 'strict' });</script>
+</body>
+</html>

@@ -22,6 +22,7 @@
                     <tr><td><code>pages.yaml</code></td><td>Documentation changes on main</td><td>Publish static documentation to GitHub Pages</td></tr>
                     <tr><td><code>azure-static-web-apps-*.yml</code></td><td>Main and manual</td><td>Alternative Azure Static Web Apps documentation deployment</td></tr>
                     <tr><td><code>deploy-azure.yml</code></td><td>Manual</td><td>Build images in ACR and deploy Helm releases to AKS</td></tr>
+                    <tr><td><code>code-review.yaml</code></td><td>Push to main and manual; no pull requests</td><td>Run offline DeepSeek review and optionally email the reports</td></tr>
                 </tbody>
             </table>
         </section>
@@ -67,7 +68,13 @@ terraform apply github-example.tfplan</div>
 
         <section class="content-section">
             <h3>Security boundaries</h3>
-            <p>Workflows use GitHub OIDC for Azure login and never embed cloud credentials. Production frontend URLs must use HTTPS/WSS, and the backend CORS origin must match the deployed frontend exactly.</p>
+            <p>Workflows use GitHub OIDC for Azure login and never embed cloud credentials. Production frontend URLs must use HTTPS/WSS, and the backend CORS origin must match the deployed frontend exactly. The offline reviewer runs only for trusted main-branch pushes or manual dispatches because self-hosted runners and SMTP secrets must not be exposed to untrusted fork pull requests.</p>
+            <p>See <a href="code-review.html">Offline code review</a> for the Ollama runner and SMTP configuration boundary.</p>
+        </section>
+
+        <section class="content-section">
+            <h3>Code-review notification boundary</h3>
+            <p>The review email includes the aggregate and per-language verdicts plus the generated Java and TypeScript reports. Its subject identifies the repository and verdict. It currently omits pull-request ID, commit SHA, branch, actor, commit message, changed files, and workflow URL. See the linked offline-review page for the exact payload and 200,000-character report limit.</p>
         </section>
     </div>
 </main>
