@@ -1,0 +1,29 @@
+# Project-local Codex configuration
+
+# Keep project instructions in AGENTS.md.
+# This file should mainly contain Codex-specific runtime/configuration.
+
+# Allow Codex to modify files inside the workspace.
+sandbox_mode = "workspace-write"
+
+# Optional: use automatic approval review for routine operations.
+approvals_reviewer = "auto_review"
+
+# Optional project-specific developer instructions.
+developer_instructions = """
+Follow AGENTS.md as the primary repository instructions.
+
+Before starting implementation:
+- read START.md
+- read MEMORY.md
+- inspect git status
+- inspect existing implementation before changing it
+
+For Java/Maven changes:
+- do not skip tests
+- do not weaken quality checks
+- run ./mvnw clean verify before declaring work complete
+
+If the full build was not executed successfully,
+report the result as UNVERIFIED rather than COMPLETE.
+"""
