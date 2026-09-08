@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1.7
-ARG BUILDPLATFORM=linux/amd64
-ARG TARGETPLATFORM
-
 FROM --platform=${BUILDPLATFORM} node:26-alpine AS build
 WORKDIR /workspace
+COPY zscaler_root.crt /usr/local/share/ca-certificates/zscaler_root.crt
+RUN apk --no-check-certificate add --no-cache ca-certificates \
+	&& update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY angular.json tsconfig.json tsconfig.app.json tsconfig.spec.json ./

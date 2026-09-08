@@ -1,9 +1,15 @@
 # syntax=docker/dockerfile:1.7
-ARG BUILDPLATFORM=linux/amd64
-ARG TARGETPLATFORM
-
 FROM --platform=${BUILDPLATFORM} maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /workspace
+COPY zscaler_root.cer /tmp/zscaler_root.cer
+RUN keytool -importcert \
+	-noprompt \
+	-trustcacerts \
+	-alias corporate-zscaler \
+	-file /tmp/zscaler_root.cer \
+	-cacerts \
+	-storepass changeit \
+	&& rm /tmp/zscaler_root.cer
 COPY pom.xml ./pom.xml
 COPY example-backend/pom.xml ./example-backend/pom.xml
 COPY example-backend/src ./example-backend/src

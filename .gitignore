@@ -30,6 +30,8 @@ logs/
 old_files/
 tmp/
 bak/
+zscaler_root.cer
+zscaler_root.crt
 
 # Reports
 reports/
