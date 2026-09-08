@@ -9,7 +9,8 @@
             ['clock-overview.html', 'Architecture and behavior'],
             ['clock-development.html', 'Local development'],
             ['github-actions.html', 'GitHub Actions'],
-            ['code-review.html', 'Offline code review']
+            ['code-review.html', 'Offline code review'],
+            ['event-catalog.html', 'Event catalog']
         ]]
     ];
 

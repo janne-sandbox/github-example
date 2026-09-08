@@ -1,0 +1,6 @@
+flowchart LR
+    Backend[Spring Boot backend] --> REST[GET /api/v1/clock]
+    Backend --> Event[Clock Update event]
+    Event --> WS[WebSocket /ws/clock]
+    REST --> Frontend[Angular frontend]
+    WS --> Frontend

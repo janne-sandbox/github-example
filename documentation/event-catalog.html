@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event catalog | Example Project</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="nav-loader.js" defer></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, securityLevel: 'strict' });
+    </script>
+</head>
+<body>
+<aside class="sidebar" data-generated-nav="true"></aside>
+<main class="main-content"><header class="header"><h2>Event catalog</h2></header><div class="content">
+<section class="content-section"><h3>Implementation-derived architecture</h3>
+<p>This page and its diagram are generated from the current EventCatalog entries and the Java/Angular implementation. Run the platform updater after source changes.</p>
+<pre class="mermaid">flowchart LR
+    Backend[Spring Boot backend] --> REST[GET /api/v1/clock]
+    Backend --> Event[Clock Update event]
+    Event --> WS[WebSocket /ws/clock]
+    REST --> Frontend[Angular frontend]
+    WS --> Frontend
+</pre>
+<p><a href="event-catalog/architecture.mmd">Open the generated Mermaid export</a> or <a href="catalog/docs/implementation-source.md">inspect the generated source inventory</a>.</p>
+</section></div></main>
+</body>
+</html>

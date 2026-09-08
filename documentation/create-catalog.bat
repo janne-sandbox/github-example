@@ -10,4 +10,7 @@ if not exist "%NPX_CMD%" (
 	exit /b 1
 )
 
-call "%NPX_CMD%" @eventcatalog/create-eventcatalog@latest catalog
+set "CATALOG_DIR=%~dp0catalog"
+echo Creating EventCatalog project in "%CATALOG_DIR%"
+call "%NPX_CMD%" --yes @eventcatalog/create-eventcatalog@latest "%CATALOG_DIR%" --use-npm
+exit /b %errorlevel%
